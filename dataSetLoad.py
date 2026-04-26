@@ -1,16 +1,20 @@
 from ucimlrepo import fetch_ucirepo
 import pandas as pd
 
+
 class DataSetLoader:
     def __init__(self, dataset_id: int = 45):
         """
         Initializes the loader and fetches the dataset from UCI.
         Dataset ID 45 corresponds to the Heart Disease dataset.
         """
-        # Fetching data during initialization ensures it's available for all methods
-        self.dataset = fetch_ucirepo(id=dataset_id)
-        
-        # Storing data internally as DataFrames/Series
+        try:
+            self.dataset = fetch_ucirepo(id=dataset_id)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Failed to fetch UCI dataset {dataset_id}. Check your network and dataset id."
+            ) from exc
+
         self.X = self.dataset.data.features
         self.y = self.dataset.data.targets
 
@@ -26,5 +30,3 @@ class DataSetLoader:
         """Returns extra info like variable descriptions and units."""
         return self.dataset.variables
 
-
-     

@@ -1,106 +1,120 @@
-from dataPreProcessingAndFeatureEngg import DataPreProcessingAndFeatureEngg
-from sklearn.model_selection import train_test_split, cross_validate
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from xgboost import XGBClassifier
-from sklearn.metrics import classification_report, roc_auc_score
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import ConfusionMatrixDisplay, roc_auc_score, recall_score, accuracy_score
-from datetime import datetime
-import pandas as pd
-import mlflow
-import matplotlib.pyplot as plt
+import shutil
+import pickle
 
+from pathlib import Path
+
+import mlflow
 import mlflow.sklearn
 
+from sklearn.model_selection import train_test_split, cross_validate, StratifiedKFold
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+
+from xgboost import XGBClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score
+
+from dataPreProcessingAndFeatureEngg import DataPreProcessingAndFeatureEngg
 
 class ModelDevelopmentPipleLine:
     def __init__(self):
         self.preProcessingPipeLineObj = DataPreProcessingAndFeatureEngg()
-        self.preProcessPipeLine = self.preProcessingPipeLineObj.build_preprocessing_pipeline()
+        # This returns your Pipeline(steps=[('cleaner',...), ('preprocessor',...)])
+        self.preProcessPipeLine = self.preProcessingPipeLineObj.build_reproducible_preprocessing_pipeline()
+        self.artifacts_dir = Path("artifacts")
+        self.artifacts_dir.mkdir(parents=True, exist_ok=True)
 
+    def export_reusable_artifacts(self, fitted_pipeline, input_example, model_name):
+        """Saves the best model and handles MLflow directory conflicts."""
+        safe_name = model_name.lower().replace(" ", "_")
+
+        # Paths
+        pickle_path = self.artifacts_dir / f"heart_disease_{safe_name}_pipeline.pkl"
+        mlflow_path = self.artifacts_dir / f"mlflow"
+
+        # Overwrite protection for MLflow
+        if mlflow_path.exists():
+            shutil.rmtree(mlflow_path)
+
+        # Save Pickle
+        with open(pickle_path, "wb") as f:
+            pickle.dump(fitted_pipeline, f)
+
+        # Save MLflow Model
+        mlflow.sklearn.save_model(
+            sk_model=fitted_pipeline,
+            path=str(mlflow_path),
+            input_example=input_example
+        )
+        print(f"\n[SAVED] Best model '{model_name}' saved to {self.artifacts_dir}")
 
     def executeModelPipeLine(self):
-        # 1. Clean the raw data first
-        features, target = self.preProcessingPipeLineObj.clean_data()
+        # 1. Load Data
+        features, _ = self.preProcessingPipeLineObj.before_clean_data()
+        target_df = self.preProcessingPipeLineObj.get_binary_target()
+        target = target_df.values.ravel()
 
-        # FIX: Convert target to 1D array
-        # Use .values.ravel() if target is a pandas Series/DataFrame
-        # Use .ravel() if target is a NumPy array
-        target = target.values.ravel() if hasattr(target, 'values') else target.ravel()
-        
-
-        features_train, features_test, target_train, target_test = train_test_split(
+        # 2. Split
+        X_train, X_test, y_train, y_test = train_test_split(
             features, target, test_size=0.2, random_state=42, stratify=target
         )
 
-        # Define 3 Candidate Models
+        # 3. Models
         models = {
             "Logistic Regression": LogisticRegression(max_iter=1000),
             "Random Forest": RandomForestClassifier(n_estimators=300, random_state=42),
-            "SVM": SVC(probability=True, kernel='rbf'),
             "XGBoost": XGBClassifier(eval_metric='logloss', random_state=42)
         }
 
-        results = {}
+        best_model_name = None
+        best_model_pipeline = None
+        best_cv_roc_auc = -1.0
 
-        print(f"{'Model':<20} | {'CV Accuracy':<12} | {'CV Recall':<10} | {'ROC-AUC':<10}")
-        print("-" * 60)
+        print(f"\n{'Model':<20} | {'CV ROC-AUC':<12} | {'Test Accuracy':<12}")
+        print("-" * 50)
+
+        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
         for name, clf in models.items():
             with mlflow.start_run(run_name=name):
-                # Create Pipeline
+                # Build end-to-end pipeline
+                # We use the existing preProcessPipeLine directly
                 model_pipeline = Pipeline(steps=[
-                    ('preprocessor', self.preProcessPipeLine), # Feature Engineering (Scaling/Encoding)
+                    ('preprocessing', self.preProcessPipeLine),
                     ('classifier', clf)
                 ])
 
-                # Cross-Validation
-                cv_scores = cross_validate(
-                    model_pipeline, features_train, target_train, 
-                    cv=5, 
-                    scoring=['accuracy', 'recall', 'roc_auc']
-                )
+                # Cross-validate
+                cv_results = cross_validate(model_pipeline, X_train, y_train, cv=skf, scoring='roc_auc')
+                mean_roc_auc = cv_results['test_score'].mean()
 
-                # Train final version for Test Metrics
-                model_pipeline.fit(features_train, target_train)
-                target_pred = model_pipeline.predict(features_test)
-                targer_proba = model_pipeline.predict_proba(features_test)[:, 1]
-                test_auc = roc_auc_score(target_test, targer_proba)
+                # Fit on full training set
+                model_pipeline.fit(X_train, y_train)
 
-                metrics = {
-                "accuracy": accuracy_score(target_test, target_pred),
-                "recall": recall_score(target_test, target_pred),
-                "roc_auc": roc_auc_score(target_test, targer_proba)
-                }
+                # Test set evaluation
+                y_pred = model_pipeline.predict(X_test)
+                test_acc = accuracy_score(y_test, y_pred)
 
-                # 3. Log Parameters and Metrics
-                mlflow.log_params(clf.get_params())
-                mlflow.log_metrics(metrics)
-                mlflow.set_tag("model_type", name)
+                print(f"{name:<20} | {mean_roc_auc:<12.4f} | {test_acc:<12.4f}")
 
-                # 4. Generate and Log Plot (Artifact)
-                plt.figure(figsize=(6,6))
-                ConfusionMatrixDisplay.from_predictions(target_test, target_pred, cmap='Blues')
-                plot_path = f"confusion_matrix_{name}.png"
-                plt.title(f"Confusion Matrix - {name}")
-                plt.savefig(plot_path)
-                mlflow.log_artifact(plot_path)
-                plt.close()
+                # Tracking
+                mlflow.log_metric("cv_roc_auc", mean_roc_auc)
+                mlflow.log_metric("test_accuracy", test_acc)
 
-                # 5. Log the Model (Artifact)
-                # This allows for one-click deployment later
-                mlflow.sklearn.log_model(model_pipeline, name="heart-disease-pipeline", 
-                                        input_example=features_test.iloc[:1])
+                # Update best model
+                if mean_roc_auc > best_cv_roc_auc:
+                    best_cv_roc_auc = mean_roc_auc
+                    best_model_name = name
+                    best_model_pipeline = model_pipeline
 
-modelPipeLine = ModelDevelopmentPipleLine()
-modelPipeLine.executeModelPipeLine()
+        # Export the champion
+        if best_model_pipeline:
+            self.export_reusable_artifacts(best_model_pipeline, X_test.iloc[:1], best_model_name)
 
+def main():
+    mlflow.set_experiment("Heart_Disease_Final")
+    pipeline = ModelDevelopmentPipleLine()
+    pipeline.executeModelPipeLine()
 
-
-
-        
-        
-        
-
+if __name__ == "__main__":
+    main()
