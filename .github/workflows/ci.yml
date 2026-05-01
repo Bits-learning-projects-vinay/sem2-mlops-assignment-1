@@ -30,7 +30,7 @@ jobs:
             --max-line-length=120 \
             --extend-ignore=E203,W503,E501
 
-  # ── 2. Unit Tests ────────────���────────────────────────────────────────────
+  # ── 2. Unit Tests ──────────────────────────────────────────────────────────
   unit-tests:
     name: Unit Tests (pytest)
     runs-on: ubuntu-latest
@@ -138,4 +138,3 @@ jobs:
 
       - name: Show artifact contents
         run: ls -lh artifacts/
-
