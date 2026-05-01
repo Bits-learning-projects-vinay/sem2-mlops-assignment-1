@@ -110,6 +110,28 @@ jobs:
           path: mlruns/
           retention-days: 30
 
+      - name: Configure AWS credentials
+        if: github.event_name == 'push' && secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' && secrets.AWS_REGION != '' && secrets.S3_BUCKET != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload trained artifacts to S3
+        if: github.event_name == 'push' && secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' && secrets.AWS_REGION != '' && secrets.S3_BUCKET != ''
+        env:
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_PREFIX: ${{ secrets.S3_PREFIX }}
+        run: |
+          test -d artifacts
+          if [ -n "$S3_PREFIX" ]; then
+            TARGET_PATH="s3://${S3_BUCKET}/${S3_PREFIX}/"
+          else
+            TARGET_PATH="s3://${S3_BUCKET}/"
+          fi
+          aws s3 sync artifacts/ "$TARGET_PATH" --delete
+
       - name: Show artifact contents
         run: ls -lh artifacts/
 
