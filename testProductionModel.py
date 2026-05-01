@@ -33,6 +33,7 @@ class TestModel:
             "ca": 0,
             "thal": '?'  # Testing the '?' handling in your HeartDiseaseCleaner
         }])
+
     def test_production_model(self):
         # 1. Path to your saved best model
         # Note: Ensure this matches the filename in your /artifacts folder
@@ -61,3 +62,4 @@ class TestModel:
 if __name__ == "__main__":
     loader = TestModel()
     loader.test_production_model()
+

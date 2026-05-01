@@ -9,6 +9,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from dataSetLoad import DataSetLoader
 
+
 class HeartDiseaseCleaner(BaseEstimator, TransformerMixin):
     """
     Sklearn-compatible cleaner.
@@ -141,6 +142,7 @@ class DataPreProcessingAndFeatureEngg:
     def get_processed_data(self):
         """Convenience method for main execution."""
         return self.clean_data()
+
 
 if __name__ == '__main__':
     # Test script

@@ -4,10 +4,7 @@ MLflow and UCI network calls are fully mocked.
 """
 import pickle
 import pytest
-import numpy as np
-import pandas as pd
-from pathlib import Path
-from unittest.mock import patch, MagicMock, ANY
+from unittest.mock import patch, MagicMock
 
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
@@ -248,4 +245,3 @@ class TestExecuteModelPipeline:
         preds = model.predict(X_raw.iloc[:5])
         assert len(preds) == 5
         assert set(preds).issubset({0, 1})
-

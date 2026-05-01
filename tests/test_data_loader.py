@@ -4,7 +4,7 @@ Unit tests for dataSetLoad.py  →  DataSetLoader
 import types
 import pytest
 import pandas as pd
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from dataSetLoad import DataSetLoader
 
@@ -103,4 +103,3 @@ class TestDataSetLoaderFailure:
     def test_generic_exception_wrapped(self, _mock_fetch):
         with pytest.raises(RuntimeError):
             DataSetLoader()
-

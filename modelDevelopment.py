@@ -16,6 +16,7 @@ from sklearn.metrics import accuracy_score
 
 from dataPreProcessingAndFeatureEngg import DataPreProcessingAndFeatureEngg
 
+
 class ModelDevelopmentPipleLine:
     def __init__(self):
         self.preProcessingPipeLineObj = DataPreProcessingAndFeatureEngg()
@@ -30,7 +31,7 @@ class ModelDevelopmentPipleLine:
 
         # Paths
         pickle_path = self.artifacts_dir / f"heart_disease_{safe_name}_pipeline.pkl"
-        mlflow_path = self.artifacts_dir / f"mlflow"
+        mlflow_path = self.artifacts_dir / "mlflow"
 
         # Overwrite protection for MLflow
         if mlflow_path.exists():
@@ -111,6 +112,7 @@ class ModelDevelopmentPipleLine:
         if best_model_pipeline:
             self.export_reusable_artifacts(best_model_pipeline, X_test.iloc[:1], best_model_name)
 
+
 def main():
     mlflow.set_experiment("Heart_Disease_Final")
     pipeline = ModelDevelopmentPipleLine()
@@ -118,3 +120,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

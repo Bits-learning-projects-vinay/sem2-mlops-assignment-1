@@ -179,3 +179,4 @@ class TestTestProductionModel:
         }])
         prob = model.predict_proba(patient)[:, 1][0]
         assert 0.0 <= prob <= 1.0
+

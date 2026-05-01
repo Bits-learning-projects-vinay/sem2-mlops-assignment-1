@@ -20,10 +20,10 @@ if PROJECT_ROOT not in sys.path:
 # ---------------------------------------------------------------------------
 # Synthetic dataset helpers
 # ---------------------------------------------------------------------------
-NUMERIC_COLS   = ["age", "trestbps", "chol", "thalach", "oldpeak"]
+NUMERIC_COLS = ["age", "trestbps", "chol", "thalach", "oldpeak"]
 CATEGORICAL_COLS = ["sex", "cp", "fbs", "restecg", "exang", "slope", "ca", "thal"]
-FEATURE_COLS   = NUMERIC_COLS + CATEGORICAL_COLS
-TARGET_COL     = "num"
+FEATURE_COLS = NUMERIC_COLS + CATEGORICAL_COLS
+TARGET_COL = "num"
 
 np.random.seed(42)
 _N = 60  # enough rows for 5-fold CV (>= 5 per class)
@@ -103,8 +103,8 @@ def mock_loader_cls(raw_features, raw_targets):
     Returns a *class* (not an instance) that behaves like DataSetLoader
     but returns synthetic data without any network call.
     """
-    feats  = raw_features.copy()
-    tgts   = raw_targets.copy()
+    feats = raw_features.copy()
+    tgts = raw_targets.copy()
 
     class _FakeLoader:
         def __init__(self, dataset_id=45):
@@ -115,9 +115,8 @@ def mock_loader_cls(raw_features, raw_targets):
             self.X = feats
             self.y = tgts
 
-        def get_features(self):  return self.X
-        def get_targets(self):   return self.y
-        def get_metadata(self):  return self.dataset.variables
+        def get_features(self): return self.X
+        def get_targets(self): return self.y
+        def get_metadata(self): return self.dataset.variables
 
     return _FakeLoader
-

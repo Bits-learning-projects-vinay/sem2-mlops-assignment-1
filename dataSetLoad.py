@@ -21,7 +21,7 @@ class DataSetLoader:
     def get_features(self) -> pd.DataFrame:
         """Returns the 14 clinical features."""
         return self.X
-        
+
     def get_targets(self) -> pd.DataFrame:
         """Returns the binary target (presence/absence of disease)."""
         return self.y
@@ -29,4 +29,3 @@ class DataSetLoader:
     def get_metadata(self):
         """Returns extra info like variable descriptions and units."""
         return self.dataset.variables
-
