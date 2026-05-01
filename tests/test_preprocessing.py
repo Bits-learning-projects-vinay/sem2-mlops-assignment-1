@@ -255,4 +255,3 @@ class TestBuildReproduciblePreprocessingPipeline:
         pipe.fit(X_raw)          # fit on full training data first
         out = pipe.transform(raw_features_with_question_marks)
         assert not np.isnan(out).any()
-

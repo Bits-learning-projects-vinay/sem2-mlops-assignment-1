@@ -5,8 +5,7 @@ import sys
 import pickle
 import pytest
 import pandas as pd
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 
@@ -66,7 +65,6 @@ class TestTestModelInit:
 
         with patch.object(sys, "exit", side_effect=SystemExit) as mock_exit:
             # Temporarily point the class to the empty dir
-            original_init = TestModel.__init__
 
             def patched_init(self):
                 self.artifacts_dir = empty_dir
@@ -181,4 +179,3 @@ class TestTestProductionModel:
         }])
         prob = model.predict_proba(patient)[:, 1][0]
         assert 0.0 <= prob <= 1.0
-
