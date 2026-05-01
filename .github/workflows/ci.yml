@@ -79,6 +79,9 @@ jobs:
     name: Model Training (MLflow)
     runs-on: ubuntu-latest
     needs: unit-tests
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -111,20 +114,21 @@ jobs:
           retention-days: 30
 
       - name: Configure AWS credentials
-        if: github.event_name == 'push' && secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' && secrets.AWS_REGION != '' && secrets.S3_BUCKET != ''
+        if: github.event_name == 'push' && secrets.AWS_ROLE_ARN != '' && secrets.AWS_REGION != '' && secrets.S3_BUCKET != ''
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-model-upload
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload trained artifacts to S3
-        if: github.event_name == 'push' && secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' && secrets.AWS_REGION != '' && secrets.S3_BUCKET != ''
+        if: github.event_name == 'push' && secrets.AWS_ROLE_ARN != '' && secrets.AWS_REGION != '' && secrets.S3_BUCKET != ''
         env:
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
           S3_PREFIX: ${{ secrets.S3_PREFIX }}
         run: |
           test -d artifacts
+          test -n "$(find artifacts -type f | head -n 1)"
           if [ -n "$S3_PREFIX" ]; then
             TARGET_PATH="s3://${S3_BUCKET}/${S3_PREFIX}/"
           else
