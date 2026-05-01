@@ -8,6 +8,7 @@ import pandas as pd
 from unittest.mock import patch
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
+from testProductionModel import TestModel
 
 
 # ---------------------------------------------------------------------------
@@ -59,7 +60,6 @@ class TestTestModelInit:
 
     def test_exits_when_no_artifact_found(self, tmp_path):
         """If no pickle exists, __init__ should call sys.exit."""
-        from testProductionModel import TestModel
         empty_dir = tmp_path / "empty_artifacts"
         empty_dir.mkdir()
 
@@ -179,4 +179,3 @@ class TestTestProductionModel:
         }])
         prob = model.predict_proba(patient)[:, 1][0]
         assert 0.0 <= prob <= 1.0
-
