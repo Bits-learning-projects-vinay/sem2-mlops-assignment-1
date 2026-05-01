@@ -53,7 +53,7 @@ jobs:
             -v \
             --tb=short \
             --cov=. \
-            --cov-omit="tests/*,.venv/*,mlruns/*" \
+            --cov-config=.coveragerc \
             --cov-report=xml:coverage.xml \
             --cov-report=term-missing \
             --junitxml=test-results.xml
