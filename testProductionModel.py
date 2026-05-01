@@ -40,8 +40,6 @@ class TestModel:
 
         with open(self.model_path, "rb") as f:
             model = pickle.load(f)
-
-
         print("\nInput Patient Data:")
         print(self.sample_patient)
 
@@ -62,4 +60,3 @@ class TestModel:
 if __name__ == "__main__":
     loader = TestModel()
     loader.test_production_model()
-
