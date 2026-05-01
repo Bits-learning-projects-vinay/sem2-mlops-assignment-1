@@ -82,6 +82,11 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    # Job-level env mapping allows 'if' conditions to safely check for secrets
+    env:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
     steps:
       - uses: actions/checkout@v4
 
@@ -114,7 +119,8 @@ jobs:
           retention-days: 30
 
       - name: Configure AWS credentials
-        if: github.event_name == 'push' && secrets.AWS_ROLE_ARN != '' && secrets.AWS_REGION != '' && secrets.S3_BUCKET != ''
+        # Updated to use 'env' context instead of 'secrets' directly
+        if: github.event_name == 'push' && env.AWS_ROLE_ARN != '' && env.AWS_REGION != '' && env.S3_BUCKET != ''
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
@@ -122,9 +128,8 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload trained artifacts to S3
-        if: github.event_name == 'push' && secrets.AWS_ROLE_ARN != '' && secrets.AWS_REGION != '' && secrets.S3_BUCKET != ''
+        if: github.event_name == 'push' && env.AWS_ROLE_ARN != '' && env.AWS_REGION != '' && env.S3_BUCKET != ''
         env:
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
           S3_PREFIX: ${{ secrets.S3_PREFIX }}
         run: |
           test -d artifacts
